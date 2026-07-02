@@ -1,6 +1,6 @@
 # RAG-Assisted AI NOC Operator
 
-**Live demo / test website:**  
+**New Live demo / test website:**  
 https://danvzla.github.io/ai-noc-operator-rag/
 
 **Direct test page:**  
