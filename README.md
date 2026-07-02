@@ -76,7 +76,7 @@ The workflow uses five agents:
 
 | Mode | Description |
 |---|---|
-| Demo Mode | Runs without an API key using scripted scenarios and deterministic workflow logic. Best for recruiters, LinkedIn, and interviews. |
+| Demo Mode | Runs without an API key using scripted scenarios and deterministic workflow logic. |
 | Claude API | Runs the live agent chain through Claude using your own API key. |
 | OpenAI API | Runs the live agent chain through OpenAI using your own API key. |
 
