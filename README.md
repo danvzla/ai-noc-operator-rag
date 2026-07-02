@@ -125,10 +125,4 @@ The live site should publish to:
 https://danvzla.github.io/ai-noc-operator-rag/
 ```
 
-## Resume bullet
 
-Built a RAG-assisted AI NOC Operator using a 5-agent workflow for alarm correlation, incident classification, remediation governance, ITSM ticketing, and post-incident learning, with runbook-grounded decisions, human-in-the-loop safety gates, and shift-turnover handoff.
-
-## LinkedIn positioning
-
-RAG-Assisted AI NOC Operator — a runbook-grounded 5-agent workflow that turns noisy network alarms into correlated incidents, governed remediation decisions, ITSM tickets, post-incident learning, and next-shift handoff.
