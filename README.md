@@ -1,7 +1,7 @@
 # RAG-Assisted AI NOC Operator
 
 **Live demo / test website:**  
-GitHub Pages:
+GitHub:
 https://danvzla.github.io/ai-noc-operator-rag/
 Netlify:
 https://ai-noc-operator-rag.netlify.app/
