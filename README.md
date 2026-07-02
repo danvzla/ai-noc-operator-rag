@@ -1,20 +1,39 @@
-# AI NOC Operator — RAG-Assisted 5-Agent Workflow
+# RAG-Assisted AI NOC Operator
 
-AI NOC Operator is a portfolio demo that shows how a Network Operations Center workflow can use agentic AI safely: noisy alarms are normalized, correlated to probable root cause, classified by confidence, reviewed by a governance guardrail, ticketed into ITSM, tracked through outcome, and converted into post-incident learning.
+**Live demo / test website:**  
+https://danvzla.github.io/ai-noc-operator-rag/
 
-## What changed in this redesigned version
+**Direct test page:**  
+https://danvzla.github.io/ai-noc-operator-rag/index.html
 
-- **Dedicated `/rag-runbooks` folder**: the lightweight RAG / runbook layer is now separated from `index.html` and stored in a visible, inspectable folder.
-- **Runbook source files**: each operational runbook is available as a Markdown file, such as `rag-runbooks/RB-FIBER-002.md` and `rag-runbooks/RB-BGP-007.md`.
-- **Runbook index / retrieval file**: `rag-runbooks/runbook-index.js` contains the runbook metadata and retrieval function used by the app.
-- **Runbook-grounded agent prompts**: Correlator, Classifier, Governance, Ticketing, and Learner agents receive retrieved runbook snippets in Live Mode.
-- **Agent 5 — Post-Incident Learner**: generates a post-mortem summary, what worked, what needs review, a proposed runbook update, a new detection rule, and a KB article draft.
-- **8-stage operations workflow**: ingestion, RAG-grounded correlation, classification, governance, ticketing, outcome tracking, post-incident learning, and shift turnover.
+**GitHub repository:**  
+https://github.com/danvzla/ai-noc-operator-rag
 
-## File structure
+## Overview
+
+**RAG-Assisted AI NOC Operator** is a runbook-grounded, multi-agent network operations workflow that turns noisy NOC alarms into correlated incidents, governed remediation decisions, ITSM tickets, post-incident learning, and next-shift handoff.
+
+The tool demonstrates how Retrieval-Augmented Generation (RAG), agent orchestration, remediation governance, and ITSM workflow automation can be combined into a practical AI-assisted NOC operating model.
+
+## What the demo shows
+
+The workflow runs through eight operational stages:
+
+| Stage | Name | Purpose |
+|---:|---|---|
+| 0 | Event ingestion & suppression | Normalizes raw events, suppresses duplicates/flapping alarms, checks change context, and builds service-impact context. |
+| 1 | Runbook-grounded correlation | Retrieves relevant runbooks and correlates noisy alarms into probable root cause and actionable incident groups. |
+| 2 | Incident classification | Scores incidents by confidence, severity, and impact; recommends auto-remediation or escalation. |
+| 3 | Remediation governance | Applies safety guardrails, rollback requirements, blast-radius checks, and change-control policy before execution. |
+| 4 | ITSM ticketing | Creates ServiceNow/Remedy-style tickets with owner, priority, SLA, and next-shift action. |
+| 5 | Outcome tracking | Tracks approved actions, failed post-checks, escalations, blocked changes, and ticket updates after governance review. |
+| 6 | Post-incident learning | Converts incident outcomes into runbook update proposals, detection rules, and KB article drafts. |
+| 7 | Shift turnover | Produces the next-shift handoff with root cause, open items, ticket queue, owners, SLA risk, and next actions. |
+
+## Project structure
 
 ```text
-ai-noc-operator/
+ai-noc-operator-rag/
 ├── index.html
 ├── agents.js
 ├── styles.css
@@ -30,72 +49,86 @@ ai-noc-operator/
     └── RB-ITSM-001.md
 ```
 
-## Runbook library
+## RAG / runbook layer
 
-The app currently includes these runbooks:
+The `rag-runbooks/` folder acts as the lightweight retrieval corpus.
 
-| Runbook | Domain |
+- `runbook-index.js` contains the runbook metadata, retrieval keywords, and guidance fields used by the agents.
+- The Markdown files are human-readable operational runbooks.
+- When a scenario is selected, the app retrieves the most relevant runbooks and injects the retrieved guidance into the agent workflow.
+- Runbook citations are displayed in the UI and link to the corresponding Markdown files.
+
+This is intentionally lightweight and transparent for a portfolio demo. In a production architecture, this layer could be replaced by embeddings, a vector database, metadata filtering, RBAC-aware retrieval, and source-grounded citations.
+
+## Agents
+
+The workflow uses five agents:
+
+| Agent | Role |
+|---:|---|
+| Agent 1 | Runbook-Grounded Correlation Agent |
+| Agent 2 | Incident Classification Agent |
+| Agent 3 | Remediation Governance Agent |
+| Agent 4 | ITSM Ticketing & Shift Workflow Agent |
+| Agent 5 | Post-Incident Learning Agent |
+
+## Execution modes
+
+| Mode | Description |
 |---|---|
-| `RB-FIBER-002` | Optical loss / fiber cut correlation |
-| `RB-BGP-007` | BGP drift and route-map rollback |
-| `RB-DDOS-011` | DDoS edge mitigation |
-| `RB-DNS-004` | Recursive DNS resolver failure |
-| `RB-RAN-PTP-003` | 5G RAN PTP timing drift |
-| `RB-SASE-006` | SASE / SD-WAN tunnel storm |
-| `RB-ITSM-001` | ITSM ticketing and shift handoff standard |
+| Demo Mode | Runs without an API key using scripted scenarios and deterministic workflow logic. Best for recruiters, LinkedIn, and interviews. |
+| Claude API | Runs the live agent chain through Claude using your own API key. |
+| OpenAI API | Runs the live agent chain through OpenAI using your own API key. |
 
-The runtime retrieval layer lives in:
+## Test instructions
 
-```text
-rag-runbooks/runbook-index.js
-```
+Open the live demo:
 
-The human-readable source runbooks live in:
+https://danvzla.github.io/ai-noc-operator-rag/
 
-```text
-rag-runbooks/*.md
-```
+Then test the following:
 
-## Modes
+1. Select **Demo** mode.
+2. Select the **Fiber cut — Dallas–Atlanta backbone** scenario.
+3. Click **Start NOC Workflow**.
+4. Confirm the workflow progresses through stages 0–7.
+5. Confirm RAG/runbook citation chips appear.
+6. Click a runbook citation and verify it opens a Markdown runbook under `/rag-runbooks/`.
 
-- **Demo Mode** — no API key required. Runs the full 5-agent workflow with scripted outputs and runbook citations.
-- **Claude API Mode** — real chained API calls using your Anthropic key.
-- **OpenAI API Mode** — real chained API calls using your OpenAI key.
+Direct file tests:
 
-## Run locally
+- https://danvzla.github.io/ai-noc-operator-rag/index.html
+- https://danvzla.github.io/ai-noc-operator-rag/styles.css
+- https://danvzla.github.io/ai-noc-operator-rag/agents.js
+- https://danvzla.github.io/ai-noc-operator-rag/rag-runbooks/runbook-index.js
+- https://danvzla.github.io/ai-noc-operator-rag/rag-runbooks/RB-FIBER-002.md
 
-Open `index.html` directly in a browser for Demo Mode. For best behavior with runbook links and Claude/OpenAI Live Mode, deploy to GitHub Pages or run a local server:
+If the main URL does not load, verify GitHub Pages deployment status under **Actions** and **Settings → Pages**.
 
-```bash
-python3 -m http.server 8000
-```
+## GitHub Pages deployment
 
-Then open:
+Recommended GitHub Pages source:
 
 ```text
-http://localhost:8000
+Settings → Pages → Source: GitHub Actions
 ```
 
-## GitHub Pages
-
-Upload all files and the `rag-runbooks/` folder to the repo root:
+Recommended workflow file:
 
 ```text
-index.html
-agents.js
-styles.css
-README.md
-rag-runbooks/
+.github/workflows/static.yml
 ```
 
-Then enable GitHub Pages from the `main` branch.
+The live site should publish to:
 
-## Portfolio positioning
+```text
+https://danvzla.github.io/ai-noc-operator-rag/
+```
 
-**Resume bullet:**
+## Resume bullet
 
-> Built a RAG-assisted AI NOC Operator using a 5-agent workflow for alarm correlation, incident classification, remediation governance, ITSM ticketing, and post-incident learning, with a dedicated runbook library, cited runbook-grounded decisions, human-in-the-loop safety gates, and shift-turnover handoff.
+Built a RAG-assisted AI NOC Operator using a 5-agent workflow for alarm correlation, incident classification, remediation governance, ITSM ticketing, and post-incident learning, with runbook-grounded decisions, human-in-the-loop safety gates, and shift-turnover handoff.
 
-**LinkedIn project description:**
+## LinkedIn positioning
 
-> AI NOC Operator is a RAG-assisted, 5-agent network operations workflow that turns noisy alarm streams into correlated incidents, governance-approved actions, ITSM tickets, and post-incident learning. The demo includes a dedicated runbook library, cited operational guidance, prompt transparency, Claude/OpenAI live modes, and a no-key demo mode.
+RAG-Assisted AI NOC Operator — a runbook-grounded 5-agent workflow that turns noisy network alarms into correlated incidents, governed remediation decisions, ITSM tickets, post-incident learning, and next-shift handoff.
