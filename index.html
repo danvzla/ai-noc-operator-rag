@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI NOC Operations Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="v6-command-center">
+
+<header class="topbar">
+  <div class="topbar-mark"><i class="ti ti-activity"></i></div>
+  <span class="topbar-name">RAG-Assisted AI NOC Operator</span>
+  <div class="topbar-div"></div>
+  <span class="topbar-tool">Runbook RAG · 5-Agent Governance · ITSM · Learning Loop</span>
+  <div class="topbar-right">
+    <span class="topbar-badge">Assisted Operations</span>
+    <a class="topbar-link" href="https://www.linkedin.com/in/daniel-mazzini-22059734/" target="_blank">Daniel Mazzini</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO / OPS CONTEXT -->
+  <section class="ops-hero ">
+    <div class="hero-copy">
+      <div class="eyebrow">RAG-assisted multi-agent NOC workflow</div>
+      <h1>RAG-Assisted AI NOC Operator</h1>
+      <p>5-agent operations workflow that retrieves runbook guidance, correlates noisy alarms, classifies incidents, applies remediation governance, creates ITSM tickets, tracks outcomes, and generates post-incident learning for the next shift.</p>
+    </div>
+    <div class="top-stats compact-stats">
+      <div class="stat-box crit" id="stat-alarms-box">
+        <div class="stat-val red" id="stat-alarms">247</div>
+        <div class="stat-lbl"><span class="pulse-dot" id="pulse-dot"></span>Raw events · last 60 min</div>
+      </div>
+      <div class="stat-box crit" id="stat-mttr-box">
+        <div class="stat-val red" id="stat-mttr">4.2 hrs</div>
+        <div class="stat-lbl">Current MTTR</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-suppressed">0</div>
+        <div class="stat-lbl">Suppressed / deduped events</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-impact">P1</div>
+        <div class="stat-lbl">Impact risk</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE ALARM FEED -->
+  <div class="section-title"><i class="ti ti-bell-ringing"></i> Raw Event Stream — Before Correlation & Suppression</div>
+  <div class="alarm-rain" id="alarm-rain"></div>
+
+  <!-- CONTROL BAR -->
+  <div class="control-bar">
+    <div class="control-row">
+      <div class="ctrl-block">
+        <span class="ctrl-label">Provider</span>
+        <div class="prov-pills">
+          <button class="prov-pill active" id="mode-demo" onclick="setMode('demo')"><i class="ti ti-player-play"></i> Demo</button>
+          <button class="prov-pill" id="mode-claude" onclick="setMode('claude')"><i class="ti ti-sparkles"></i> Claude</button>
+          <button class="prov-pill" id="mode-openai" onclick="setMode('openai')"><i class="ti ti-brand-openai"></i> OpenAI</button>
+        </div>
+      </div>
+      <div class="ctrl-block">
+        <span class="ctrl-label">Incident scenario</span>
+        <select class="scn-select" id="scenario-select">
+          <option value="fiber">01 · Fiber cut — Dallas–Atlanta backbone (Telco)</option>
+          <option value="ddos">02 · DDoS mitigation — edge traffic spike (Security Ops)</option>
+          <option value="config">03 · Config drift — BGP misconfiguration rollout (Enterprise)</option>
+          <option value="dns">04 · DNS outage — recursive resolver failure (Cloud Ops)</option>
+          <option value="ran">05 · 5G RAN degradation — fronthaul timing issue (Telco)</option>
+          <option value="sase">06 · SASE/SD-WAN tunnel storm — regional failover (Enterprise Security)</option>
+        </select>
+      </div>
+      <div class="ctrl-block" id="key-group" style="display:none">
+        <span class="ctrl-label">API Key</span>
+        <div style="display:flex;gap:6px">
+          <input class="key-input" type="password" id="api-key" placeholder="sk-ant-...">
+          <button class="btn-connect" onclick="saveKey()">Connect</button>
+        </div>
+      </div>
+      <button class="btn-activate" id="run-btn" onclick="runOrchestrator()">
+        <i class="ti ti-bolt" style="font-size:16px"></i> Start NOC Workflow
+      </button>
+    </div>
+    <div class="status-line" id="status-line"></div>
+  </div>
+
+
+  <!-- WORKFLOW SEQUENCE -->
+  <div class="flow-rail flow-rail-eight" aria-label="AI NOC workflow sequence">
+    <div class="flow-step active" data-step="ingestion"><span>0</span><b>Event ingestion & suppression</b><em>NMS · EMS · SNMP · telemetry</em></div>
+    <div class="flow-step" data-step="correlator"><span>1</span><b>RAG-grounded correlation</b><em>Runbooks + symptoms to root cause</em></div>
+    <div class="flow-step" data-step="classifier"><span>2</span><b>Classification</b><em>Confidence · severity · impact</em></div>
+    <div class="flow-step" data-step="governance"><span>3</span><b>Governance approval</b><em>Safety gate · rollback · policy</em></div>
+    <div class="flow-step" data-step="tickets"><span>4</span><b>ITSM ticketing</b><em>ServiceNow · Remedy · owners</em></div>
+    <div class="flow-step" data-step="runbook"><span>5</span><b>Outcome tracking</b><em>Executed · failed · escalated</em></div>
+    <div class="flow-step" data-step="learning"><span>6</span><b>Post-incident learning</b><em>Runbook update · detection rule</em></div>
+    <div class="flow-step" data-step="handoff"><span>7</span><b>Shift turnover</b><em>Owners · SLA · next action</em></div>
+  </div>
+
+  <!-- PIPELINE: INGESTION / IMPACT -->
+  <div class="pipe-section intake-section" id="section-ingestion">
+    <div class="agent-status intake-status" id="ingestion-status"><i class="ti ti-sitemap"></i><div><div class="agent-title">Stage 0 — Event Ingestion, Suppression & Impact Context</div><div class="agent-desc">Normalizes raw alarms, suppresses duplicate/flapping events, and builds service-impact context before AI correlation.</div></div></div>
+    <div class="intake-grid">
+      <div class="intake-card">
+        <div class="panel-kicker">Normalized sources</div>
+        <div class="source-chips" id="source-chips"></div>
+      </div>
+      <div class="intake-card impact-card">
+        <div class="panel-kicker">Service impact summary</div>
+        <div id="impact-summary"></div>
+      </div>
+      <div class="intake-card">
+        <div class="panel-kicker">Change / maintenance check</div>
+        <div id="change-check"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE: CORRELATOR -->
+  <div class="pipe-section" id="section-correlator">
+    <div class="agent-status" id="correlator-status"><i class="ti ti-cpu"></i><div><div class="agent-title">Agent 1 — Alarm Correlation Agent</div><div class="agent-desc">Correlates raw NOC alarms into a root cause and actionable incident groups.</div></div><button class="agent-prompt-btn" onclick="showAgentPrompt('correlator')"><i class="ti ti-code"></i> View Prompt</button></div>
+    <div class="split">
+      <div class="raw-feed" id="raw-feed-pipeline"></div>
+      <div class="funnel-arrow"><i class="ti ti-arrow-narrow-right"></i></div>
+      <div class="correlated-panel" id="correlated-panel"></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE: CLASSIFIER -->
+  <div class="pipe-section" id="section-classifier">
+    <div class="agent-status" id="classifier-status"><i class="ti ti-list-check"></i><div><div class="agent-title">Agent 2 — Incident Classification Agent</div><div class="agent-desc">Scores confidence and recommends auto-remediation or human escalation.</div></div><button class="agent-prompt-btn" onclick="showAgentPrompt('classifier')"><i class="ti ti-code"></i> View Prompt</button></div>
+    <div class="inc-head">
+      <span>Incident</span><span>Root cause</span><span style="text-align:right">Confidence</span><span style="text-align:center">Action</span>
+    </div>
+    <div id="inc-cards"></div>
+  </div>
+
+  <!-- PIPELINE: GOVERNANCE -->
+  <div class="pipe-section" id="section-governance">
+    <div class="agent-status" id="governance-status"><i class="ti ti-shield-check"></i><div><div class="agent-title">Agent 3 — Remediation Governance Agent</div><div class="agent-desc">Validates blast radius, rollback posture, and change-control risk before execution.</div></div><button class="agent-prompt-btn" onclick="showAgentPrompt('governance')"><i class="ti ti-code"></i> View Prompt</button></div>
+    <div class="approval-gate" id="approval-gate">
+      <div class="approval-gate-title"><i class="ti ti-hand-stop"></i> Human Approval Gate — Review Before Execution</div>
+      <div class="approval-gate-text" id="approval-gate-text">Governance has separated safe actions from items that require human review. Approved actions may proceed to simulated execution; risky items are ticketed for ownership.</div>
+      <div class="approval-gate-row" id="approval-gate-row"></div>
+    </div>
+    <div class="gov-grid" id="gov-cards"></div>
+  </div>
+
+  <!-- PIPELINE: TICKETING -->
+  <div class="pipe-section" id="section-ticketing">
+    <div class="agent-status" id="ticketing-status"><i class="ti ti-ticket"></i><div><div class="agent-title">Agent 4 — Ticketing &amp; Shift Workflow Agent</div><div class="agent-desc">Creates simulated ServiceNow / Remedy trouble tickets for next-shift attention.</div></div><button class="agent-prompt-btn" onclick="showAgentPrompt('ticketing')"><i class="ti ti-code"></i> View Prompt</button></div>
+    <div class="stage-heading">
+      <div class="stage-title"><i class="ti ti-ticket"></i> ITSM Work Queue — ServiceNow / Remedy Tickets</div>
+      <div class="stage-subtitle">Creates operational tickets for incidents that require human ownership, field work, change approval, or next-shift follow-up.</div>
+    </div>
+    <div class="ticket-grid" id="ticket-cards"></div>
+  </div>
+
+  <!-- PIPELINE: RESOLUTION + MTTR -->
+  <div class="pipe-section" id="section-resolution">
+    <div class="mttr-hero">
+      <div class="mttr-label">Mean Time To Resolution</div>
+      <div class="mttr-chain">
+        <span class="mttr-old" id="mttr-old">4.2 hrs</span>
+        <span class="mttr-arrow"><i class="ti ti-arrow-right"></i></span>
+        <span class="mttr-new" id="mttr-new">—</span>
+      </div>
+    </div>
+    <div class="stage-heading">
+      <div class="stage-title"><i class="ti ti-bolt"></i> Operational Outcome Tracking — Runbook Results & Ticket Updates</div>
+      <div class="stage-subtitle">Tracks the result after governance and ticketing: safe actions executed, failures escalated, tickets updated, and blocked changes routed for approval.</div>
+    </div>
+    <div id="exec-rows"></div>
+    <div class="summary-strip" id="summary-strip"></div>
+  </div>
+
+
+  <!-- PIPELINE: POST-INCIDENT LEARNING -->
+  <div class="pipe-section" id="section-learning">
+    <div class="agent-status" id="learner-status"><i class="ti ti-brain"></i><div><div class="agent-title">Agent 5 — Post-Incident Learner</div><div class="agent-desc">Generates post-mortem summary, runbook update proposal, detection rule, and KB article draft.</div></div><button class="agent-prompt-btn" onclick="showAgentPrompt('learner')"><i class="ti ti-code"></i> View Prompt</button></div>
+    <div class="stage-heading">
+      <div class="stage-title"><i class="ti ti-brain"></i> Closed-Loop Learning — Runbook & Detection Rule Improvement</div>
+      <div class="stage-subtitle">Turns the incident outcome into reusable operational knowledge so the next similar event is faster and safer to handle.</div>
+    </div>
+    <div class="learning-grid" id="learning-cards"></div>
+  </div>
+
+
+  <!-- PIPELINE: HANDOFF -->
+  <div class="pipe-section" id="section-handoff">
+    <div class="stage-heading handoff-heading">
+      <div class="stage-title"><i class="ti ti-file-text"></i> Shift Turnover Control Pack — Owners, SLA Risk & Next Actions</div>
+      <div class="stage-subtitle">Final operational handoff for the incoming shift, including ticket queue, unresolved risks, and assigned owners.</div>
+    </div>
+    <div class="handoff-doc" id="handoff-doc"></div>
+    <div class="btn-row-end">
+      <button class="btn-ghost" onclick="resetAll()"><i class="ti ti-refresh"></i> Run another scenario</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Prompt transparency modal -->
+<div class="prompt-modal-backdrop" id="prompt-modal" onclick="closeAgentPrompt(event)">
+  <div class="prompt-modal" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title">
+    <div class="prompt-modal-head">
+      <div class="prompt-modal-icon"><i class="ti ti-code"></i></div>
+      <div>
+        <div class="prompt-modal-title" id="prompt-modal-title">Agent Prompt &amp; Decision Logic</div>
+        <div class="prompt-modal-sub" id="prompt-modal-sub">Review the agent role, input context, expected output, and safety rules.</div>
+      </div>
+      <button class="prompt-close" onclick="closeAgentPrompt()" aria-label="Close prompt viewer"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="prompt-modal-body">
+      <div class="prompt-meta-grid">
+        <div class="prompt-meta"><b>Agent</b><span id="prompt-agent-name">—</span></div>
+        <div class="prompt-meta"><b>Mission</b><span id="prompt-agent-mission">—</span></div>
+        <div class="prompt-meta"><b>Output</b><span id="prompt-agent-output">—</span></div>
+      </div>
+      <pre class="prompt-template" id="prompt-template"></pre>
+      <div class="prompt-note"><b>Transparency note:</b> This viewer exposes the prompt pattern used by each agent so technical reviewers can inspect the role, inputs, output schema, and governance rules without cluttering the main operations flow.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Data layer -->
+<!-- Agent layer -->
+<!-- App layer -->
+<script src="rag-runbooks/runbook-index.js"></script>
+<script src="agents.js"></script>
+<script>
+/* ── assets/data/alarms.js ── */
+/**
+ * assets/data/alarms.js
+ * Decorative alarm-feed generator — produces realistic-looking raw NOC alarms
+ * for the "cold open" visual and the raw-feed panel during correlation.
+ * This data is NEVER sent to any AI agent — it's purely visual noise to set the scene.
+ */
+
+window.AlarmFeed = {
+  sevTypes: [
+    {
+      sev: 'CRITICAL', cls: 'sev-crit', texts: [
+        'Interface Gi0/1 down — RTR-DAL-CORE-02',
+        'Optical signal loss — DWDM-ATL-04',
+        'Interface Gi0/2 down — RTR-ATL-CORE-01',
+        'Link down — TenGigE0/3/0/1',
+        'Connection table exhaustion — FW-EDGE-03',
+        'Resolver SERVFAIL spike — DNS-USC-02',
+        'PTP sync loss — DU-DAL-NORTH-07',
+        'IPsec tunnel down — BRANCH-AUS-118',
+        'Anycast node unhealthy — DNS-ANYCAST-05',
+        'SASE POP unreachable — CENTRAL-POP-02',
+      ],
+    },
+    {
+      sev: 'MAJOR', cls: 'sev-maj', texts: [
+        'BGP neighbor lost — 10.4.2.1',
+        'OSPF adjacency down — area 0',
+        'BGP neighbor lost — 10.4.2.7',
+        'Card temperature high — LC-04',
+        'Route flap detected — AGG-RTR-09',
+        'Firewall policy sync lag — FW-MGMT-01',
+        'ZTNA connector packet loss — ZTNA-DAL-03',
+        'DNSSEC validation failures — partner-zone.net',
+        'Packet delay variation high — FH-DAL-22',
+        'CDN origin pool saturation — ORIGIN-03',
+      ],
+    },
+    {
+      sev: 'WARNING', cls: 'sev-warn', texts: [
+        'Latency threshold exceeded — link DAL-ATL-PRI',
+        'CPU utilization high — RTR-DAL-CORE-01',
+        'Jitter threshold exceeded — VoIP-trunk-12',
+        'Bandwidth threshold — Edge-DAL-01',
+        'Synthetic transaction failure — checkout-api',
+        'CASB inspection latency — SaaS-INSPECT-04',
+        'Customer VPN flap — CUST-VRF-214',
+        'DNS cache hit ratio degraded — RESOLVER-POOL-A',
+        'RAN sector throughput degraded — gNB-DAL-019',
+        'Change window conflict detected — CHG-88412',
+      ],
+    },
+  ],
+
+  randomAlarmHTML() {
+    const t = this.sevTypes[Math.floor(Math.random() * this.sevTypes.length)];
+    const txt = t.texts[Math.floor(Math.random() * t.texts.length)];
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    return `<div class="alarm-row"><span class="alarm-sev ${t.cls}">${t.sev}</span><span class="alarm-text">${txt}</span><span class="alarm-time">${time}</span></div>`;
+  },
+
+  fill(elementId, count) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    let html = '';
+    for (let i = 0; i < count; i++) html += this.randomAlarmHTML();
+    el.innerHTML = html;
+  },
+};
+
+
+/* ── assets/data/scenarios.js ── */
+/**
+ * assets/data/scenarios.js
+ * Six pre-built NOC incident scenarios.
+ *
+ * In Demo Mode, the full incidents[] array below is played back exactly as scripted.
+ * In Live Mode (Claude/OpenAI), only { name, rawAlarmCount } is sent to Agent 1 as a
+ * seed — the LLM generates its own root cause, correlation groups, and incident
+ * classifications fresh. The rest of this object is unused in Live Mode.
+ */
+
+window.SCENARIOS = {
+  fiber: {
+    name: "Fiber cut — Dallas–Atlanta backbone",
+    rawAlarmCount: 247, suppressedEvents: 44,
+    rootCause: "Fiber cut — Dallas–Atlanta primary backbone (DWDM-ATL-04)",
+    groups: [
+      "39 alarms → INC-1142 (BGP flap, secondary path)",
+      "31 alarms → INC-1144 (Optical signal loss, DWDM-ATL-04)",
+      "24 alarms → INC-1145 (Latency, secondary path saturated)",
+      "18 alarms → INC-1146 (Customer VPN flap, downstream)",
+      "12 alarms → INC-1147 (Line card temp warning, possible unrelated)",
+      "+ 9 more correlated groups...",
+    ],
+    actionableCount: 14,
+    incidents: [
+      { id: "INC-1142", cause: "BGP flap, secondary path", confidence: 96, action: "auto", exec: "BGP peer restart executed", time: "41 sec" },
+      { id: "INC-1143", cause: "OSPF reconverge, expected behavior", confidence: 91, action: "auto", exec: "No action needed — self-healing confirmed", time: "12 sec" },
+      { id: "INC-1144", cause: "Fiber cut, DWDM-ATL-04", confidence: 88, action: "escalate", exec: "Diagnostic bundle attached — field tech dispatch suggested (Atlanta)" },
+      { id: "INC-1145", cause: "Latency, secondary path saturated", confidence: 79, action: "auto", exec: "Reroute via secondary path (TE tunnel 12)", time: "1 min 8 sec" },
+      { id: "INC-1146", cause: "Customer VPN flap, downstream", confidence: 94, action: "auto", exec: "VPN session re-establishment", time: "22 sec" },
+      { id: "INC-1147", cause: "Line card temp warning, unrelated?", confidence: 52, action: "escalate", exec: "Confidence too low for auto-action — flagged for manual correlation review" },
+    ],
+    oldMTTR: "4.2 hrs", newMTTR: "19 min",
+  },
+
+  ddos: {
+    name: "DDoS mitigation — edge traffic spike",
+    rawAlarmCount: 326, suppressedEvents: 59,
+    rootCause: "Volumetric DDoS — edge ingress spike, ASN 64512 (suspected botnet)",
+    groups: [
+      "68 alarms → INC-2201 (Ingress bandwidth threshold, Edge-DAL-01)",
+      "44 alarms → INC-2202 (API gateway rate-limit trigger)",
+      "37 alarms → INC-2203 (Connection table exhaustion, FW-EDGE-03)",
+      "21 alarms → INC-2204 (Upstream BGP flap, Tier-1 peer)",
+      "17 alarms → INC-2205 (CDN origin overload, checkout service)",
+      "+ 8 more correlated groups...",
+    ],
+    actionableCount: 13,
+    incidents: [
+      { id: "INC-2201", cause: "Ingress bandwidth threshold, Edge-DAL-01", confidence: 97, action: "auto", exec: "Scrubbing center redirect activated", time: "18 sec" },
+      { id: "INC-2202", cause: "Rate-limit trigger, API gateway", confidence: 93, action: "auto", exec: "Adaptive rate-limiting applied", time: "9 sec" },
+      { id: "INC-2203", cause: "Connection table exhaustion, FW-EDGE-03", confidence: 90, action: "auto", exec: "Connection table flush + SYN-cookie mode enabled", time: "26 sec" },
+      { id: "INC-2204", cause: "Upstream BGP flap, Tier-1 peer", confidence: 61, action: "escalate", exec: "Confidence below threshold — possible unrelated peer issue, flagged for NetOps review" },
+      { id: "INC-2205", cause: "CDN origin overload, checkout service", confidence: 85, action: "auto", exec: "Traffic shifted to secondary origin pool", time: "34 sec" },
+      { id: "INC-2206", cause: "False-positive bot signature on partner API", confidence: 57, action: "escalate", exec: "SOC validation required before blocking partner ASN" },
+    ],
+    oldMTTR: "2.8 hrs", newMTTR: "6 min",
+  },
+
+  config: {
+    name: "Config drift — BGP misconfiguration rollout",
+    rawAlarmCount: 214, suppressedEvents: 39,
+    rootCause: "BGP route-map misconfiguration — pushed via automated rollout, 14 sites affected",
+    groups: [
+      "46 alarms → INC-3301 (Route flap, regional aggregation routers)",
+      "28 alarms → INC-3302 (Prefix withdrawal, customer VRF-Finance)",
+      "21 alarms → INC-3303 (Prefix withdrawal, customer VRF-Healthcare)",
+      "15 alarms → INC-3304 (Suboptimal routing, increased latency)",
+      "+ 6 more correlated groups...",
+    ],
+    actionableCount: 10,
+    incidents: [
+      { id: "INC-3301", cause: "Route flap, regional aggregation routers", confidence: 95, action: "auto", exec: "Automated rollback to last-known-good config", time: "51 sec" },
+      { id: "INC-3302", cause: "Prefix withdrawal, customer VRF-Finance", confidence: 89, action: "auto", exec: "Route-map reverted, prefixes re-advertised", time: "38 sec" },
+      { id: "INC-3303", cause: "Prefix withdrawal, customer VRF-Healthcare", confidence: 58, action: "escalate", exec: "Compliance-sensitive VRF — escalated for manual validation before rollback" },
+      { id: "INC-3304", cause: "Suboptimal routing, increased latency", confidence: 82, action: "auto", exec: "Preferred path restored via local-preference correction", time: "29 sec" },
+      { id: "INC-3305", cause: "Canary policy mismatch in rollback pipeline", confidence: 63, action: "escalate", exec: "Rollback pipeline paused — release owner approval required" },
+    ],
+    oldMTTR: "3.6 hrs", newMTTR: "11 min",
+  },
+
+  dns: {
+    name: "DNS outage — recursive resolver failure",
+    rawAlarmCount: 281, suppressedEvents: 51,
+    rootCause: "Recursive DNS resolver pool failure — cache corruption after policy update",
+    groups: [
+      "54 alarms → INC-4401 (Resolver SERVFAIL spike, pool US-CENTRAL)",
+      "42 alarms → INC-4402 (Customer app timeout, dependent services)",
+      "31 alarms → INC-4403 (Anycast health-check failure)",
+      "19 alarms → INC-4404 (Split-horizon DNS mismatch)",
+      "+ 7 more correlated groups...",
+    ],
+    actionableCount: 11,
+    incidents: [
+      { id: "INC-4401", cause: "Resolver SERVFAIL spike, US-CENTRAL pool", confidence: 96, action: "auto", exec: "Fail traffic to healthy resolver pool and flush corrupt cache", time: "24 sec" },
+      { id: "INC-4402", cause: "Anycast health-check failure", confidence: 90, action: "auto", exec: "Withdraw unhealthy anycast node from routing", time: "31 sec" },
+      { id: "INC-4403", cause: "Customer app timeout, dependent services", confidence: 78, action: "auto", exec: "Trigger synthetic DNS validation and service dependency retest", time: "42 sec" },
+      { id: "INC-4404", cause: "Split-horizon DNS mismatch", confidence: 59, action: "escalate", exec: "Escalate to DNS engineering — policy intent unclear" },
+      { id: "INC-4405", cause: "DNSSEC validation error on partner zone", confidence: 67, action: "escalate", exec: "Partner zone owner validation required before override" },
+    ],
+    oldMTTR: "2.4 hrs", newMTTR: "8 min",
+  },
+
+  ran: {
+    name: "5G RAN degradation — fronthaul timing issue",
+    rawAlarmCount: 372, suppressedEvents: 67,
+    rootCause: "5G RAN fronthaul timing drift — PTP grandmaster instability impacting Dallas market sectors",
+    groups: [
+      "81 alarms → INC-5501 (PTP sync loss, DU cluster DAL-NORTH)",
+      "63 alarms → INC-5502 (Radio sector throughput degradation)",
+      "48 alarms → INC-5503 (Packet delay variation above threshold)",
+      "29 alarms → INC-5504 (Customer complaint cluster, fixed wireless)",
+      "+ 10 more correlated groups...",
+    ],
+    actionableCount: 15,
+    incidents: [
+      { id: "INC-5501", cause: "PTP sync loss, DU cluster DAL-NORTH", confidence: 94, action: "auto", exec: "Shift timing source to standby grandmaster", time: "36 sec" },
+      { id: "INC-5502", cause: "Radio sector throughput degradation", confidence: 87, action: "auto", exec: "Trigger RAN parameter health check and neighbor relation validation", time: "58 sec" },
+      { id: "INC-5503", cause: "Packet delay variation above threshold", confidence: 84, action: "auto", exec: "Re-route fronthaul path through low-jitter transport segment", time: "1 min 11 sec" },
+      { id: "INC-5504", cause: "Potential GPS antenna fault at aggregation site", confidence: 55, action: "escalate", exec: "Field validation required — dispatch recommended with timing diagnostics" },
+      { id: "INC-5505", cause: "Emergency services coverage sector", confidence: 72, action: "escalate", exec: "Human approval required due to critical coverage area" },
+    ],
+    oldMTTR: "5.1 hrs", newMTTR: "23 min",
+  },
+
+  sase: {
+    name: "SASE/SD-WAN tunnel storm — regional failover",
+    rawAlarmCount: 238, suppressedEvents: 43,
+    rootCause: "SASE regional POP instability — SD-WAN tunnels failing over across Central region",
+    groups: [
+      "49 alarms → INC-6601 (IPsec tunnel flaps, branch cluster A)",
+      "36 alarms → INC-6602 (ZTNA connector packet loss)",
+      "25 alarms → INC-6603 (Firewall policy sync lag)",
+      "16 alarms → INC-6604 (CASB inspection latency)",
+      "+ 5 more correlated groups...",
+    ],
+    actionableCount: 9,
+    incidents: [
+      { id: "INC-6601", cause: "IPsec tunnel flaps, branch cluster A", confidence: 92, action: "auto", exec: "Pin affected branches to secondary SASE POP", time: "27 sec" },
+      { id: "INC-6602", cause: "ZTNA connector packet loss", confidence: 86, action: "auto", exec: "Restart connector health-check process and rebalance sessions", time: "46 sec" },
+      { id: "INC-6603", cause: "Firewall policy sync lag", confidence: 64, action: "escalate", exec: "Change-control review required before forcing policy sync" },
+      { id: "INC-6604", cause: "CASB inspection latency", confidence: 80, action: "auto", exec: "Route SaaS inspection through alternate regional node", time: "39 sec" },
+      { id: "INC-6605", cause: "Executive branch VIP user impact", confidence: 60, action: "escalate", exec: "Escalate to service desk and network lead with user-impact context" },
+    ],
+    oldMTTR: "3.1 hrs", newMTTR: "13 min",
+  },
+};
+
+
+// Enrich scenarios with operational context shown in the V6 UI.
+Object.entries(window.SCENARIOS).forEach(([key, s]) => {
+  const profiles = {
+    fiber: { region:'Dallas ↔ Atlanta backbone', service:'MPLS VPN / DIA / VoIP transport', customers:'47 enterprise circuits', sla:'High SLA risk', priority:'P1', owner:'Transport NOC + Field Ops' },
+    ddos: { region:'Central edge / internet ingress', service:'Edge security / API / CDN origin', customers:'Public web + partner APIs', sla:'Critical revenue risk', priority:'P1', owner:'Security Ops + Edge NetOps' },
+    config: { region:'14 enterprise WAN sites', service:'BGP / VRF routing', customers:'Finance + Healthcare VRFs', sla:'High compliance risk', priority:'P1', owner:'IP Core + Change Manager' },
+    dns: { region:'US-CENTRAL resolver pool', service:'Recursive DNS / anycast', customers:'Internal apps + external users', sla:'High app availability risk', priority:'P1', owner:'Cloud Ops + DNS Engineering' },
+    ran: { region:'Dallas market RAN', service:'5G RAN / fronthaul timing', customers:'Fixed wireless + mobile sectors', sla:'Critical coverage risk', priority:'P1', owner:'RAN Ops + Transport NOC' },
+    sase: { region:'Central SASE POP cluster', service:'SASE / SD-WAN / ZTNA', customers:'Branch users + SaaS access', sla:'Moderate business impact', priority:'P2', owner:'SASE Ops + Enterprise NetOps' },
+  };
+  s.sources = ['NMS/EMS alarms', 'SNMP traps', 'Syslog', 'Streaming telemetry', 'Synthetic probes', 'ServiceNow Event Mgmt'];
+  s.impact = profiles[key] || profiles.fiber;
+  s.changeCheck = [
+    { status: key === 'config' ? 'warn' : 'ok', label: 'Change check', text: key === 'config' ? 'Recent rollout found — rollback/approval gate required.' : 'No active change directly mapped to the primary symptom cluster.' },
+    { status: key === 'ran' || key === 'fiber' ? 'warn' : 'ok', label: 'Field work', text: key === 'ran' || key === 'fiber' ? 'Physical validation may be required; dispatch workflow prepared.' : 'No field dispatch required unless escalation confirms persistent impact.' },
+    { status: 'ok', label: 'Duplicate', text: 'No existing parent incident found; workflow can create parent/child tickets if needed.' },
+  ];
+});
+
+
+
+
+/* ── rag-runbooks/runbook-index.js ── */
+/* Runbook metadata and retrieval live in a dedicated /rag-runbooks folder.
+   See rag-runbooks/*.md for the human-readable runbook source files. */
+/* ── Agents loaded from agents.js (see <script src="agents.js"> in <head>) ── */
+/* window.Agent01Correlator, Agent02Classifier, Agent03Governance, Agent04Ticketing, */
+/* and window.AGENT_REGISTRY are all defined there — not duplicated here.            */
+
+/* ── assets/js/api-client.js ── */
+/**
+ * assets/js/api-client.js
+ * Provider abstraction for Claude (Anthropic) and OpenAI.
+ * Switching provider is a single call: window.ApiClient.init('claude' | 'openai').
+ * Includes a 4-attempt JSON repair chain to handle malformed or truncated LLM output.
+ */
+
+window.ApiClient = {
+  provider: 'demo',
+
+  init(provider) {
+    this.provider = provider;
+  },
+
+  /** Routes a prompt to the currently configured provider. */
+  async call(apiKey, prompt, maxTokens) {
+    if (this.provider === 'claude') return this._callClaude(apiKey, prompt, maxTokens);
+    if (this.provider === 'openai') return this._callOpenAI(apiKey, prompt, maxTokens);
+    throw new Error('ApiClient.call() invoked with no live provider configured');
+  },
+
+  async _callClaude(apiKey, prompt, maxTokens) {
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      throw new Error('Network error reaching Claude API. If opened from file://, deploy to a server or use the live demo URL.');
+    }
+    if (!res.ok) {
+      let msg = `Claude API error ${res.status}`;
+      try { const e = await res.json(); msg = e.error?.message || msg; } catch (_) {}
+      if (res.status === 401) msg = 'Invalid API key.';
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    return data.content?.find(b => b.type === 'text')?.text || '';
+  },
+
+  async _callOpenAI(apiKey, prompt, maxTokens) {
+    let res;
+    try {
+      res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+    } catch (e) {
+      throw new Error('Network error reaching OpenAI API.');
+    }
+    if (!res.ok) {
+      let msg = `OpenAI API error ${res.status}`;
+      try { const e = await res.json(); msg = e.error?.message || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+  },
+
+  /**
+   * 4-attempt JSON repair chain. LLMs occasionally return JSON wrapped in
+   * markdown fences, with preamble text, literal newlines inside strings,
+   * or truncated near the token limit. Each attempt is progressively more
+   * aggressive about cleaning the string before parsing.
+   */
+  parseJSON(raw) {
+    const first = raw.indexOf('{');
+    const firstArr = raw.indexOf('[');
+    const useArray = firstArr !== -1 && (first === -1 || firstArr < first);
+    const openChar = useArray ? '[' : '{';
+    const closeChar = useArray ? ']' : '}';
+    const start = useArray ? firstArr : first;
+    const last = raw.lastIndexOf(closeChar);
+    if (start === -1 || last === -1) throw new Error('No JSON found in API response');
+    const chunk = raw.substring(start, last + 1);
+
+    const attempts = [
+      s => JSON.parse(s),
+      s => JSON.parse(s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')),
+      s => JSON.parse(s.replace(/\r?\n|\t/g, ' ')),
+      s => JSON.parse(s.replace(/\r?\n|\t/g, ' ').replace(/\s{2,}/g, ' ')),
+    ];
+    for (const fn of attempts) {
+      try { return fn(chunk); } catch (e) { /* try next */ }
+    }
+    throw new Error('Malformed JSON from API — please try again.');
+  },
+};
+
+
+/* ── assets/js/pipeline.js ── */
+/**
+ * assets/js/pipeline.js
+ * Rendering and animation logic for the progressive pipeline reveal.
+ * Pure DOM manipulation — no AI calls live here (those are in the agent files
+ * and orchestrated by app.js).
+ */
+
+window.Pipeline = {
+
+  showSection(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn('Missing pipeline section:', id);
+      return;
+    }
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  hideAllSections() {
+    ['section-ingestion', 'section-correlator', 'section-classifier', 'section-governance', 'section-resolution', 'section-ticketing', 'section-learning', 'section-handoff'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('show');
+    });
+    const incCards = document.getElementById('inc-cards');
+    if (incCards) incCards.innerHTML = '';
+    const govCards = document.getElementById('gov-cards');
+    if (govCards) govCards.innerHTML = '';
+    const execRows = document.getElementById('exec-rows');
+    if (execRows) execRows.innerHTML = '';
+    const summaryStrip = document.getElementById('summary-strip');
+    if (summaryStrip) summaryStrip.innerHTML = '';
+    const tickets = document.getElementById('ticket-cards');
+    if (tickets) tickets.innerHTML = '';
+    const learning = document.getElementById('learning-cards');
+    if (learning) learning.innerHTML = '';
+    const gate = document.getElementById('approval-gate');
+    if (gate) gate.classList.remove('show');
+    this.setFlowStep('ingestion');
+  },
+
+  setFlowStep(step) {
+    const order = ['ingestion', 'correlator', 'classifier', 'governance', 'tickets', 'runbook', 'learning', 'handoff'];
+    const current = order.indexOf(step);
+    document.querySelectorAll('.flow-step').forEach(el => {
+      const idx = order.indexOf(el.dataset.step);
+      el.classList.remove('active', 'done');
+      if (idx < current) el.classList.add('done');
+      if (idx === current) el.classList.add('active');
+    });
+  },
+
+  updateTopStats(scenario) {
+    document.getElementById('stat-alarms').textContent = scenario.rawAlarmCount;
+    document.getElementById('stat-mttr').textContent = scenario.oldMTTR;
+    const suppressed = document.getElementById('stat-suppressed');
+    if (suppressed) suppressed.textContent = scenario.suppressedEvents || Math.round((scenario.rawAlarmCount || 0) * 0.18);
+  },
+
+  resolveTopStats() {
+    document.getElementById('stat-alarms-box').classList.remove('crit');
+    document.getElementById('stat-alarms-box').classList.add('ok');
+    document.getElementById('stat-alarms').className = 'stat-val cyan';
+    document.getElementById('stat-mttr-box').classList.remove('crit');
+    document.getElementById('stat-mttr-box').classList.add('ok');
+    document.getElementById('stat-mttr').className = 'stat-val cyan';
+  },
+
+  renderCorrelatorRaw(count) {
+    window.AlarmFeed.fill('raw-feed-pipeline', count);
+  },
+
+  renderIngestion(scenario) {
+    const sources = scenario.sources || ['SNMP traps', 'Syslog', 'Streaming telemetry', 'NMS/EMS', 'ServiceNow EM', 'Synthetic probes'];
+    const impact = scenario.impact || {
+      region: scenario.name?.includes('Dallas') ? 'Dallas / Central' : 'Multi-region',
+      service: 'IP transport / enterprise services',
+      customers: Math.max(12, Math.round((scenario.rawAlarmCount || 200) / 6)) + ' customers / circuits',
+      sla: (scenario.rawAlarmCount || 0) > 300 ? 'High SLA risk' : 'Moderate SLA risk',
+      priority: (scenario.rawAlarmCount || 0) > 300 ? 'P1' : 'P2',
+      owner: 'NOC L2 + domain SME'
+    };
+    const change = scenario.changeCheck || [
+      { status: 'ok', label: 'Event suppression', text: (scenario.suppressedEvents || Math.round((scenario.rawAlarmCount || 0) * 0.18)) + ' duplicate or flapping events suppressed before correlation.' },
+      { status: 'ok', label: 'Maintenance window', text: 'No active maintenance window found for primary affected path.' },
+      { status: 'warn', label: 'Recent change', text: 'Recent automation/config activity requires validation before high-risk remediation.' },
+      { status: 'ok', label: 'Known incident', text: 'No duplicate major incident found; new parent incident can be created if impact persists.' }
+    ];
+    const chipBox = document.getElementById('source-chips');
+    if (chipBox) chipBox.innerHTML = sources.map(s => `<span class="source-chip">${s}</span>`).join('');
+    const impactBox = document.getElementById('impact-summary');
+    if (impactBox) impactBox.innerHTML = `<div class="impact-list">
+      <div class="impact-item"><b>Region</b><span>${impact.region}</span></div>
+      <div class="impact-item"><b>Service</b><span>${impact.service}</span></div>
+      <div class="impact-item"><b>Customer impact</b><span>${impact.customers}</span></div>
+      <div class="impact-item"><b>SLA risk</b><span>${impact.sla}</span></div>
+      <div class="impact-item"><b>Priority</b><span>${impact.priority}</span></div>
+      <div class="impact-item"><b>Owner</b><span>${impact.owner}</span></div>
+    </div>`;
+    const changeBox = document.getElementById('change-check');
+    if (changeBox) changeBox.innerHTML = change.map(c => `<div class="change-row"><span class="change-badge ${c.status === 'ok' ? 'ok' : ''}">${c.label}</span><span>${c.text}</span></div>`).join('');
+    const impactStat = document.getElementById('stat-impact');
+    if (impactStat) impactStat.textContent = impact.priority || 'P2';
+  },
+
+  renderCorrelatorResult(rootCause, groups, rawCount, actionableCount, suppressedCount = 0) {
+    const postSuppression = Math.max(1, rawCount - suppressedCount);
+    const pct = Math.round((1 - actionableCount / rawCount) * 100);
+    const panel = document.getElementById('correlated-panel');
+    panel.innerHTML = `
+      <div class="rootcause-card">
+        <div class="rootcause-label">Probable root-cause candidate</div>
+        <div class="rootcause-title">${rootCause}</div>
+      </div>
+      <div class="noise-meter">
+        <span class="noise-num" style="color:var(--dim);font-size:18px">${rawCount}</span>
+        <i class="ti ti-arrow-right" style="color:var(--dim)"></i>
+        <span class="noise-num" style="color:var(--muted);font-size:15px">${postSuppression}</span>
+        <span style="font-size:10px;color:var(--dim)">post-suppression</span>
+        <i class="ti ti-arrow-right" style="color:var(--dim)"></i>
+        <span class="noise-num" style="color:var(--cyan)">${actionableCount}</span>
+        <span style="font-size:11px;color:var(--muted)">actionable incidents</span>
+        <span class="noise-badge">${pct}% noise reduction</span>
+      </div>
+      <div class="grp-label">Correlated incident groups</div>
+      ${groups.map(g => `<div class="grp-row">${g}</div>`).join('')}
+      <div class="evidence-box">
+        <h4>Runbook-grounded evidence used by the agents</h4>
+        <div class="runbook-citations">${runbookCitationHTML(window.CurrentRunbooks || [])}</div>
+        <ul>
+          <li>${suppressedCount} duplicate/flapping events suppressed before correlation (${rawCount} → ${postSuppression})</li>
+          <li>Shared event timestamp window and alarm burst pattern matched against retrieved runbooks</li>
+          <li>Topology dependency path across upstream/downstream devices</li>
+          <li>Repeated symptoms across routing, transport, service, and customer-impact alarms</li>
+          <li>Change/maintenance context checked before recommending remediation</li>
+        </ul>
+      </div>
+    `;
+  },
+
+  renderIncidentCard(inc, delay) {
+    setTimeout(() => {
+      const wrap = document.getElementById('inc-cards');
+      const div = document.createElement('div');
+      const confCls = inc.confidence >= 65 ? 'conf-hi' : 'conf-lo';
+      const actionCls = inc.action === 'auto' ? 'action-auto' : 'action-esc';
+      const actionLabel = inc.action === 'auto' ? 'Auto-remediate' : 'Escalate to L2';
+      div.className = 'inc-card';
+      div.innerHTML = `<span class="inc-id">${inc.id}</span><span class="inc-cause">${inc.cause}</span>
+        <span class="inc-conf ${confCls}">${inc.confidence}%</span>
+        <span class="action-pill ${actionCls}">${actionLabel}</span>`;
+      wrap.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('show'));
+    }, delay);
+  },
+
+
+  renderGovernanceCard(item, delay) {
+    setTimeout(() => {
+      const wrap = document.getElementById('gov-cards');
+      const div = document.createElement('div');
+      const decision = item.decision || 'review';
+      const label = decision === 'approve' ? 'Approved' : decision === 'block' ? 'Blocked' : 'Human review';
+      div.className = 'gov-card ' + decision;
+      div.innerHTML = `
+        <div class="gov-top">
+          <span class="gov-id">${item.id}</span>
+          <span class="gov-pill ${decision}">${label}</span>
+        </div>
+        <div class="gov-line"><b>Guardrail:</b> ${item.guardrail || 'Operational safety review'}</div>
+        <div class="gov-line"><b>Blast radius:</b> ${item.blastRadius || 'medium'}</div>
+        <div class="gov-line"><b>Rollback:</b> ${item.rollback || 'Manual validation required before action'}</div>
+        <div class="gov-line"><b>Rationale:</b> ${item.rationale || 'Decision generated by governance policy.'}</div>`;
+      wrap.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('show'));
+    }, delay);
+  },
+
+  renderExecRow(inc, delay) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const wrap = document.getElementById('exec-rows');
+        const div = document.createElement('div');
+        const isEsc = inc.action !== 'auto';
+        const isBlocked = inc.governanceDecision === 'block';
+        div.className = 'exec-row' + (isEsc ? ' esc' : '');
+        div.innerHTML = `<span class="exec-id">${inc.id}</span>
+          <span class="exec-action">${inc.exec}</span>
+          <span class="exec-result pending">${isBlocked ? '→ Blocked by guardrail...' : isEsc ? '→ Escalating...' : 'Executing...'}</span>`;
+        wrap.appendChild(div);
+        requestAnimationFrame(() => div.classList.add('show'));
+        setTimeout(() => {
+          const resultEl = div.querySelector('.exec-result');
+          if (isBlocked) {
+            resultEl.className = 'exec-result block';
+            resultEl.textContent = '⛔ Blocked';
+          } else if (isEsc) {
+            resultEl.className = 'exec-result esc';
+            resultEl.textContent = '→ Escalated';
+          } else if (inc.simulatedFailure) {
+            div.className = 'exec-row fail-drift';
+            resultEl.className = 'exec-result block';
+            resultEl.textContent = '⛔ Post-check failed';
+            const actionEl = div.querySelector('.exec-action');
+            if (actionEl) actionEl.innerHTML = (inc.failActionText || 'Remediation post-check failed — ticket escalated.') + ' <span class="exec-sync-badge">TICKET UPDATED</span>';
+            updateTicketEscalation(inc.id);
+          } else {
+            resultEl.className = 'exec-result';
+            resultEl.textContent = '✓ Resolved in ' + (inc.time || '—');
+          }
+          resolve();
+        }, isEsc ? 500 : 900);
+      }, delay);
+    });
+  },
+
+  animateMTTR(newVal, durationMs) {
+    const el = document.getElementById('mttr-new');
+    el.textContent = '...';
+    setTimeout(() => { el.textContent = newVal; }, durationMs);
+  },
+
+  renderSummaryStrip(autoCount, total, escCount, blockedCount = 0, failedCount = 0) {
+    const resolvedCount = Math.max(0, autoCount - failedCount);
+    document.getElementById('summary-strip').innerHTML = `
+      <div class="sum-box"><div class="sum-val" style="color:var(--green)">${resolvedCount}/${total}</div><div class="sum-lbl">Auto-resolved</div></div>
+      <div class="sum-box"><div class="sum-val" style="color:var(--amber)">${escCount}</div><div class="sum-lbl">Escalated w/ context</div></div>
+      <div class="sum-box"><div class="sum-val" style="color:var(--red)">${blockedCount}</div><div class="sum-lbl">Blocked by guardrail</div></div>
+      <div class="sum-box"><div class="sum-val" style="color:var(--red)">${failedCount}</div><div class="sum-lbl">Failed auto-remediations</div></div>
+    `;
+  },
+
+
+  renderTicketCard(ticket, delay) {
+    setTimeout(() => {
+      const wrap = document.getElementById('ticket-cards');
+      if (!wrap) return;
+      const div = document.createElement('div');
+      const priority = (ticket.priority || 'P3').toLowerCase();
+      div.className = 'ticket-card';
+      div.setAttribute('data-incident-id', ticket.incidentId || 'INC-XXXX');
+      div.innerHTML = `
+        <div class="ticket-top">
+          <span class="ticket-id">${ticket.ticketId || 'SNOW-NOC-' + Math.floor(10000 + Math.random() * 89999)}</span>
+          <span class="ticket-system">${ticket.system || 'ServiceNow'}</span>
+        </div>
+        <div class="ticket-title">${ticket.title || 'Next-shift operational follow-up'}</div>
+        <div class="ticket-meta">
+          <span class="ticket-pill ${priority} priority-pill">${ticket.priority || 'P3'}</span>
+          <span class="ticket-pill status-pill">${ticket.status || 'Assigned'}</span>
+          <span class="ticket-pill">SLA ${ticket.sla || '1 hr'}</span>
+        </div>
+        <div class="ticket-line"><b>Source incident:</b> ${ticket.incidentId || 'INC-XXXX'}</div>
+        <div class="ticket-line"><b>Assignment:</b> ${ticket.assignmentGroup || 'NOC L2'}</div>
+        <div class="ticket-line"><b>Next shift action:</b> ${ticket.nextShiftAction || 'Review attached diagnostics and continue remediation workflow.'}</div>
+        <div class="ticket-sync-note"></div>`;
+      wrap.appendChild(div);
+      requestAnimationFrame(() => div.classList.add('show'));
+    }, delay);
+  },
+
+
+  renderLearning(learning, runbooks = []) {
+    const wrap = document.getElementById('learning-cards');
+    if (!wrap) return;
+    const proposal = learning.runbookUpdateProposal || {};
+    const rule = learning.newDetectionRule || {};
+    const kb = learning.kbArticleDraft || {};
+    wrap.innerHTML = `
+      <div class="learning-card wide">
+        <div class="learning-kicker">Post-incident summary</div>
+        <div class="learning-title">${learning.postMortemSummary || 'Post-incident learning package generated.'}</div>
+        <div class="runbook-citations" style="margin-top:.7rem">${runbookCitationHTML(runbooks)}</div>
+      </div>
+      <div class="learning-card"><div class="learning-kicker">What worked</div><ul>${(learning.whatWorked || []).map(x => '<li>' + x + '</li>').join('')}</ul></div>
+      <div class="learning-card"><div class="learning-kicker">Needs review</div><ul>${(learning.whatNeedsReview || []).map(x => '<li>' + x + '</li>').join('')}</ul></div>
+      <div class="learning-card update"><div class="learning-kicker">Runbook update proposal</div><div class="learning-title">${proposal.runbookId || 'RB-UPDATE'} · ${proposal.title || 'Operational runbook update'}</div><p>${proposal.proposedChange || 'Add a runbook improvement based on the incident outcome.'}</p><small>${proposal.reason || ''}</small></div>
+      <div class="learning-card rule"><div class="learning-kicker">New detection rule</div><div class="learning-title">${rule.ruleName || 'New correlation rule'}</div><p>${rule.logic || 'IF repeated symptoms occur in the same window THEN correlate to the likely root cause.'}</p><small>Owner: ${rule.owner || 'NOC Engineering'} · Severity: ${rule.severity || 'P2'}</small></div>
+      <div class="learning-card kb"><div class="learning-kicker">Knowledge-base article draft</div><div class="learning-title">${kb.title || 'NOC learning note'}</div><p>${kb.summary || 'Draft KB article generated from the workflow outcome.'}</p><div class="tags-mini">${(kb.tags || []).map(t => '<span>' + t + '</span>').join('')}</div></div>`;
+  },
+
+  renderHandoff(rootCause, detected, resolution, openItems, result, tickets = [], learning = null) {
+    document.getElementById('handoff-doc').innerHTML = `
+      <span class="hl">NEXT-SHIFT OPERATIONS BRIEF</span> — Auto-generated, ${new Date().toLocaleTimeString('en-US', { hour12: false })} UTC
+      <h3>Root Cause</h3>
+      <span class="hl">${rootCause}</span>
+      <h3>Detection &amp; Correlation</h3>
+      ${detected}
+      <h3>Resolution</h3>
+      <span class="ok">${resolution}</span>
+      <h3>Ticket Queue</h3>
+      ${tickets.length ? tickets.map(t => '• ' + (t.ticketId || 'TICKET') + ' · ' + (t.system || 'ServiceNow') + ' · ' + (t.priority || 'P3') + ' · ' + (t.title || t.incidentId || 'follow-up')).join('<br>') : 'No external trouble tickets required.'}
+      <h3>Open Items For Next Shift</h3>
+      ${openItems.length ? openItems.map(o => '• ' + o).join('<br>') : 'None — all incidents resolved automatically.'}
+      ${learning ? '<h3>Post-Incident Learning</h3><span class="hl">Runbook update:</span> ' + (learning.runbookUpdateProposal?.runbookId || 'RB-UPDATE') + ' — ' + (learning.runbookUpdateProposal?.proposedChange || 'Update proposed.') + '<br><span class="hl">Detection rule:</span> ' + (learning.newDetectionRule?.logic || 'New rule proposed.') : ''}
+      <h3>Result</h3>
+      <span class="ok">${result}</span>
+    `;
+  },
+
+  showErrorBox(message) {
+    const box = document.createElement('div');
+    box.className = 'error-box';
+    box.innerHTML = `<strong>Error:</strong> ${message}`;
+    document.querySelector('.control-bar').insertAdjacentElement('afterend', box);
+  },
+
+  clearErrorBoxes() {
+    document.querySelectorAll('.error-box').forEach(e => e.remove());
+  },
+};
+
+
+/* ── assets/js/app.js ── */
+/**
+ * assets/js/app.js
+ * Orchestration layer: mode management, Demo Mode playback, Live Mode
+ * pipeline execution (calling AGENT_REGISTRY in order), and the main
+ * entry point wired to the "Activate AI Agent" button.
+ */
+
+let currentMode = 'demo';
+let isRunning = false;
+let rainInterval = null;
+
+// ─── ALARM RAIN (decorative, always running until activation) ────────────────
+function startAlarmRain() {
+  window.AlarmFeed.fill('alarm-rain', 34);
+  rainInterval = setInterval(() => {
+    if (isRunning) return;
+    const rain = document.getElementById('alarm-rain');
+    rain.insertAdjacentHTML('afterbegin', window.AlarmFeed.randomAlarmHTML());
+    if (rain.children.length > 38) rain.lastElementChild.remove();
+  }, 700);
+}
+
+// ─── MODE MANAGEMENT ──────────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  window.ApiClient.init(mode);
+  ['demo', 'claude', 'openai'].forEach(m => {
+    const el = document.getElementById('mode-' + m);
+    if (!el) return;
+    el.className = 'prov-pill' + (m === mode ? (m === 'openai' ? ' active-openai' : ' active') : '');
+  });
+  const kg = document.getElementById('key-group');
+  if (mode === 'demo') {
+    kg.style.display = 'none';
+  } else {
+    kg.style.display = '';
+    document.getElementById('api-key').placeholder = mode === 'claude' ? 'sk-ant-...' : 'sk-...';
+    const saved = localStorage.getItem('noc_' + mode + '_key');
+    if (saved) document.getElementById('api-key').value = saved;
+  }
+}
+
+function saveKey() {
+  const k = document.getElementById('api-key').value.trim();
+  if (currentMode === 'claude' && !k.startsWith('sk-ant-')) { alert('Enter a valid Anthropic key (sk-ant-...)'); return; }
+  if (currentMode === 'openai' && !k.startsWith('sk-')) { alert('Enter a valid OpenAI key (sk-...)'); return; }
+  localStorage.setItem('noc_' + currentMode + '_key', k);
+  document.getElementById('status-line').textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1) + ' key saved.';
+}
+
+function getApiKey() {
+  if (currentMode === 'demo') return 'demo';
+  return localStorage.getItem('noc_' + currentMode + '_key') || document.getElementById('api-key')?.value?.trim() || '';
+}
+
+
+function buildDefaultGovernance(scenario, incidents) {
+  return incidents.map((inc, idx) => {
+    const lowConfidence = inc.confidence < 65;
+    const physical = /fiber|optical|field tech|dispatch/i.test(inc.cause + ' ' + inc.exec);
+    const regulated = /healthcare|finance|compliance|customer vrf/i.test(inc.cause + ' ' + inc.exec);
+    const broadChange = /bgp|route-map|rollback|scrubbing|connection table/i.test(inc.cause + ' ' + inc.exec);
+    let decision = 'approve';
+    let guardrail = 'Bounded auto-remediation approved';
+    let blastRadius = broadChange ? 'medium' : 'low';
+    let rollback = inc.action === 'auto' ? 'Rollback to last-known-good state if post-checks fail' : 'No automated change until human validation';
+    let rationale = 'High confidence with clear operational rollback and limited blast radius.';
+
+    if (lowConfidence || physical || regulated || inc.action !== 'auto') {
+      decision = regulated ? 'block' : 'review';
+      guardrail = regulated ? 'Compliance-sensitive change control' : lowConfidence ? 'Confidence threshold below 65%' : physical ? 'Physical-layer repair requires field validation' : 'Human escalation required';
+      blastRadius = regulated ? 'high' : physical ? 'medium' : 'low';
+      rollback = regulated ? 'Manual approval required before any rollback or route change' : 'Attach diagnostics and escalate with recommended next action';
+      rationale = regulated ? 'Automation blocked because the affected service may require regulated change approval.' : 'Automation paused because the incident needs human confirmation before action.';
+    } else if (idx === incidents.length - 1 && !incidents.some(i => i.confidence < 65 || i.action !== 'auto')) {
+      decision = 'review';
+      guardrail = 'Sample human-in-the-loop validation';
+      rationale = 'One item routed to review to demonstrate governance even during high-confidence events.';
+    }
+
+    return { id: inc.id, decision, guardrail, blastRadius, rollback, rationale };
+  });
+}
+
+function applyGovernance(incidents, governance) {
+  const byId = Object.fromEntries(governance.map(g => [g.id, g]));
+  return incidents.map(inc => {
+    const gov = byId[inc.id] || { decision: inc.action === 'auto' ? 'approve' : 'review' };
+    const out = { ...inc, governanceDecision: gov.decision, governanceRationale: gov.rationale };
+    if (gov.decision !== 'approve') {
+      out.action = 'escalate';
+      out.exec = gov.decision === 'block'
+        ? 'Blocked by governance guardrail — ' + (gov.rollback || gov.rationale || 'manual approval required')
+        : 'Governance review required — ' + (gov.rollback || gov.rationale || 'human validation required');
+    }
+    return out;
+  });
+}
+
+
+function markDynamicRemediationRisk(governedIncidents) {
+  const already = governedIncidents.some(i => i.simulatedFailure);
+  if (already) return governedIncidents;
+  // Exclude incidents where no real change was made (self-healing / no-action-needed) —
+  // injecting a "post-check failed" narrative onto an incident that took no action is
+  // operationally nonsensical (there's nothing for a post-check to fail on).
+  const noOpPattern = /no action needed|self-healing|self heal|expected behavior/i;
+  const eligible = i => i.action === 'auto' && !noOpPattern.test(i.exec || '') && !noOpPattern.test(i.cause || '');
+  const candidate = governedIncidents.find(i => eligible(i) && i.confidence < 95)
+                  || governedIncidents.find(eligible);
+  if (!candidate) return governedIncidents;
+  return governedIncidents.map(i => i.id === candidate.id ? {
+    ...i,
+    simulatedFailure: true,
+    originalExec: i.exec,
+    failActionText: 'Post-check failed after simulated runbook execution — ticket updated to P1 and routed to L3/domain owner.'
+  } : i);
+}
+
+function renderApprovalGate(governedIncidents) {
+  const gate = document.getElementById('approval-gate');
+  const row = document.getElementById('approval-gate-row');
+  const text = document.getElementById('approval-gate-text');
+  if (!gate || !row) return;
+  const approved = governedIncidents.filter(i => i.action === 'auto').length;
+  const review = governedIncidents.filter(i => i.action !== 'auto' && i.governanceDecision !== 'block').length;
+  const blocked = governedIncidents.filter(i => i.governanceDecision === 'block').length;
+  row.innerHTML = '<span class="approval-pill ok">' + approved + ' approved for simulated execution</span>' +
+    '<span class="approval-pill warn">' + review + ' routed to human review</span>' +
+    '<span class="approval-pill block">' + blocked + ' blocked pending approval</span>';
+  if (text) text.textContent = 'Governance approval completed. Safe, low-blast-radius actions can proceed to simulated execution; review/blocked items are sent to ITSM ownership before the outcome log.';
+  gate.classList.add('show');
+}
+
+function updateTicketEscalation(incidentId) {
+  const card = document.querySelector('[data-incident-id="' + incidentId + '"]');
+  if (!card) return;
+  card.classList.add('escalated-sync');
+  const priority = card.querySelector('.ticket-pill.priority-pill');
+  if (priority) { priority.textContent = 'P1'; priority.className = 'ticket-pill p1 priority-pill'; }
+  const status = card.querySelector('.ticket-pill.status-pill');
+  if (status) { status.textContent = 'L3 Escalation'; status.className = 'ticket-pill p1 status-pill'; }
+  const note = card.querySelector('.ticket-sync-note');
+  if (note) note.textContent = 'Closed-loop update: remediation post-check failed, ticket priority raised and routed to L3/domain owner.';
+}
+
+
+// Each operations org standardizes on exactly one ITSM platform — tickets for the
+// same shift/outage never alternate between ServiceNow and Remedy. The platform is
+// fixed per scenario (simulating "this NOC runs ServiceNow" / "this NOC runs Remedy"),
+// not assigned per-ticket.
+const ITSM_PLATFORM_BY_SCENARIO = {
+  fiber: 'ServiceNow',
+  ddos: 'ServiceNow',
+  config: 'ServiceNow',
+  dns: 'Remedy',
+  ran: 'Remedy',
+  sase: 'ServiceNow',
+};
+
+function buildDefaultTickets(scenario, governedIncidents) {
+  const groups = {
+    fiber: 'Transport Field Ops',
+    ddos: 'Security Operations',
+    config: 'Cloud Network Engineering',
+    dns: 'Cloud Network Engineering',
+    ran: 'RAN Engineering',
+    sase: 'SASE Operations',
+  };
+  const system = ITSM_PLATFORM_BY_SCENARIO[scenario.key] || 'ServiceNow';
+  const prefix = system === 'ServiceNow' ? 'SNOW-NOC-' : 'RMDY-NOC-';
+  const unresolved = governedIncidents.filter(i => i.action !== 'auto' || i.governanceDecision === 'review' || i.governanceDecision === 'block' || i.simulatedFailure);
+  return unresolved.map((inc, idx) => {
+    const blocked = inc.governanceDecision === 'block';
+    // Priority derives from the incident's own classifier confidence/impact context rather
+    // than re-deriving severity via keyword matching on free-text cause descriptions.
+    const highImpact = (scenario.impact && scenario.impact.priority === 'P1') || inc.confidence >= 85;
+    return {
+      ticketId: prefix + (82000 + idx + Math.floor(Math.random() * 500)),
+      system,
+      incidentId: inc.id,
+      priority: inc.simulatedFailure ? 'P2' : blocked ? 'P1' : highImpact ? 'P2' : 'P3',
+      assignmentGroup: groups[scenario.key] || 'NOC L2',
+      title: inc.cause + ' — next-shift follow-up',
+      nextShiftAction: inc.simulatedFailure ? 'Monitor post-checks; escalate automatically if remediation fails.' : blocked ? 'Obtain change approval, validate blast radius, and confirm rollback plan before action.' : inc.exec,
+      sla: blocked ? '15 min' : highImpact ? '30 min' : '1 hr',
+      status: inc.simulatedFailure ? 'Monitoring' : blocked ? 'Pending Change Approval' : 'Assigned',
+    };
+  });
+}
+
+
+
+
+
+function buildDefaultLearning(scenario, governedIncidents, tickets, runbooks) {
+  const blocked = governedIncidents.filter(i => i.governanceDecision === 'block').length;
+  const escalated = governedIncidents.filter(i => i.action !== 'auto').length;
+  const rb = (runbooks && runbooks[0]) || { id: 'RB-ITSM-001', title: 'Operational Learning Standard' };
+  return {
+    postMortemSummary: scenario.rootCause + ' generated a noisy alarm burst that was reduced to actionable incidents through suppression, correlation, governance, and ticket handoff.',
+    whatWorked: ['Alarm suppression reduced duplicate/flapping events before correlation.', 'Governance separated confident classification from safe execution.', (tickets.length || 0) + ' ITSM ticket(s) preserved context for human ownership.'],
+    whatNeedsReview: [escalated + ' incident(s) required human review or field validation.', blocked + ' item(s) were blocked or constrained by governance guardrails.'],
+    runbookUpdateProposal: { runbookId: rb.id, title: 'Improve correlation and handoff guidance for ' + scenario.name, changeType: 'Update detection rule', proposedChange: 'Add explicit trigger: when the same symptom cluster appears across alarms, topology, impact and change context, group under a single probable root cause and attach ' + rb.id + ' as cited guidance.', reason: 'Reduces future triage time and makes the automation decision explainable to operators.' },
+    newDetectionRule: { ruleName: scenario.name.split('—')[0].trim() + ' correlation rule', logic: 'IF key alarms match ' + rb.id + ' guidance within a 5-minute window THEN correlate to one parent incident and require governance review for unsafe actions.', severity: scenario.impact?.priority || 'P2', owner: scenario.impact?.owner || 'NOC Engineering' },
+    kbArticleDraft: { title: 'Post-incident learning: ' + scenario.name, summary: 'Use retrieved runbooks, suppression metrics, governance outcomes and ticket handoff to accelerate the next similar incident while preserving human approval for risky work.', tags: ['AI-NOC', 'runbook', 'post-incident-learning'] }
+  };
+}
+
+// ─── PROMPT TRANSPARENCY VIEWER ──────────────────────────────────────────────
+function agentStatusHTML(icon, title, desc, promptId) {
+  return '<i class="ti ' + icon + '"></i><div><div class="agent-title">' + title + '</div><div class="agent-desc">' + desc + '</div></div>' +
+    '<button class="agent-prompt-btn" onclick="showAgentPrompt(\'' + promptId + '\')"><i class="ti ti-code"></i> View Prompt</button>';
+}
+
+function setAgentStatus(elementId, icon, title, desc, promptId) {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = agentStatusHTML(icon, title, desc, promptId);
+}
+
+// Prompt viewer metadata (mission/output descriptions only — NOT the prompt text itself).
+// The actual prompt text shown in the modal is generated live from each agent's real
+// buildPrompt() function below, so the viewer can never drift out of sync with what is
+// actually sent to the API. Single source of truth: the agent files themselves.
+window.AGENT_PROMPT_VIEWER_META = {
+  correlator: {
+    agentRef: window.Agent01Correlator,
+    name: 'Agent 1 — Alarm Correlation Agent',
+    mission: 'Correlate raw alarm symptoms into probable root-cause candidates and actionable incident groups.',
+    output: 'Root cause, correlated groups, actionable count',
+    notes: 'Groups events by shared time window, topology path, device dependency, and service symptoms. Presents the result as a probable root-cause candidate, not an absolute field-confirmed cause.',
+  },
+  classifier: {
+    agentRef: window.Agent02Classifier,
+    name: 'Agent 2 — Incident Classification Agent',
+    mission: 'Score each correlated incident and decide whether it is safe to auto-remediate or escalate.',
+    output: 'Incident ID, cause, confidence, action, execution recommendation',
+    notes: 'At least one incident must have confidence below 65 and action "escalate" — the system must demonstrate that it does not blindly automate every incident.',
+  },
+  governance: {
+    agentRef: window.Agent03Governance,
+    name: 'Agent 3 — Remediation Governance Agent',
+    mission: 'Validate blast radius, rollback posture, and change-control risk before any action is shown as executed.',
+    output: 'Approve, review, or block decision with rationale',
+    notes: 'Approves only high-confidence, bounded-blast-radius actions with clear rollback. Reviews low-confidence, compliance-sensitive, or physical-repair items. Blocks actions that could worsen a broad outage or affect regulated traffic without rollback.',
+  },
+  ticketing: {
+    agentRef: window.Agent04Ticketing,
+    name: 'Agent 4 — Ticketing & Shift Workflow Agent',
+    mission: 'Create ServiceNow/Remedy-style tickets for unresolved, reviewed, blocked, or next-shift-owned work.',
+    output: 'Ticket ID, ITSM system, priority, SLA, owner, status, next action',
+    notes: 'Creates tickets only for escalated, reviewed, blocked, or physically-dispatched incidents — not for fully auto-resolved items unless monitoring is still required.',
+  },
+  learner: {
+    agentRef: window.Agent05Learner,
+    name: 'Agent 5 — Post-Incident Learner',
+    mission: 'Generate post-mortem summary, runbook update proposal, detection rule, and KB article draft.',
+    output: 'Post-mortem, runbook update, detection rule, KB article draft',
+    notes: 'Closes the loop by turning ticketed outcomes and governance decisions into reusable operational knowledge.',
+  },
+};
+
+// Representative placeholder context used ONLY to render an example prompt in the modal —
+// this is never sent to any API. It mirrors the shape of real runtime data so buildPrompt()
+// produces a realistic, readable example.
+function getPromptPreviewContext() {
+  const scenario = (window.SCENARIOS && window.SCENARIOS.fiber) || { name: 'Example scenario', rawAlarmCount: 247 };
+  const prior = {
+    correlator: { rootCause: scenario.rootCause || 'Example root cause', groups: scenario.groups || ['Example group 1', 'Example group 2'] },
+    classifier: (scenario.incidents || []).slice(0, 3),
+    governance: [{ id: 'INC-XXXX', decision: 'review', guardrail: 'Example guardrail', blastRadius: 'medium', rollback: 'Example rollback plan', rationale: 'Example rationale' }],
+    governedIncidents: (scenario.incidents || []).slice(0, 3),
+    tickets: [{ ticketId: 'SNOW-NOC-82389', incidentId: 'INC-1144', priority: 'P1', assignmentGroup: 'Transport Field Ops' }],
+  };
+  return { scenario, prior };
+}
+
+function showAgentPrompt(agentId) {
+  const info = window.AGENT_PROMPT_VIEWER_META && window.AGENT_PROMPT_VIEWER_META[agentId];
+  const modal = document.getElementById('prompt-modal');
+  if (!info || !modal) return;
+
+  // Generate the displayed prompt LIVE from the agent's actual buildPrompt() function —
+  // this guarantees the modal always reflects exactly what would be sent to the API,
+  // with zero risk of drifting out of sync with a hand-duplicated copy.
+  let livePrompt = '(unable to generate live preview)';
+  try {
+    const { scenario, prior } = getPromptPreviewContext();
+    const agent = info.agentRef;
+    livePrompt = agent.buildPrompt.length >= 2 ? agent.buildPrompt(scenario, prior) : agent.buildPrompt(scenario);
+  } catch (e) {
+    livePrompt = '(error generating live preview: ' + e.message + ')';
+  }
+
+  const name = document.getElementById('prompt-agent-name');
+  const mission = document.getElementById('prompt-agent-mission');
+  const output = document.getElementById('prompt-agent-output');
+  const template = document.getElementById('prompt-template');
+  if (name) name.textContent = info.name;
+  if (mission) mission.textContent = info.mission;
+  if (output) output.textContent = info.output;
+  if (template) template.textContent = livePrompt + '\n\n--- Decision notes ---\n' + info.notes;
+  modal.classList.add('show');
+}
+
+function closeAgentPrompt(evt) {
+  if (evt && evt.target && evt.target.id !== 'prompt-modal') return;
+  const modal = document.getElementById('prompt-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAgentPrompt();
+});
+
+// ─── DEMO MODE — fully scripted playback, no API calls ───────────────────────
+async function runDemoMode(scenario) {
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  const status = document.getElementById('status-line');
+  const P = window.Pipeline;
+
+  scenario.runbooks = retrieveRunbooks(scenario);
+  window.CurrentRunbooks = scenario.runbooks;
+  P.updateTopStats(scenario);
+
+  // Stage 0 — Event ingestion / impact context
+  P.setFlowStep('ingestion');
+  P.showSection('section-ingestion');
+  P.renderIngestion(scenario);
+  status.textContent = 'Stage 0 — Normalizing event sources and impact context...';
+  await delay(900);
+
+  // Agent 1 — Correlator (scripted)
+  P.setFlowStep('correlator');
+  P.showSection('section-correlator');
+  P.renderCorrelatorRaw(34);
+  setAgentStatus('correlator-status', 'ti-cpu', 'Agent 1 — Alarm Correlation Agent', 'Analyzing ' + scenario.rawAlarmCount + ' alarms · correlating across affected network paths...', 'correlator');
+  status.textContent = 'Agent 1 — Alarm Correlator running...';
+  await delay(1400);
+  setAgentStatus('correlator-status', 'ti-cpu', 'Agent 1 — Alarm Correlation Agent', 'Pattern detected — grouping by root timestamp and affected range...', 'correlator');
+  await delay(1200);
+  P.renderCorrelatorResult(scenario.rootCause, scenario.groups, scenario.rawAlarmCount, scenario.actionableCount, scenario.suppressedEvents);
+  setAgentStatus('correlator-status', 'ti-check', 'Agent 1 — Alarm Correlation Agent', 'Root cause identified · ' + scenario.actionableCount + ' actionable incidents', 'correlator');
+  await delay(900);
+
+  // Agent 2 — Classifier (scripted)
+  P.setFlowStep('classifier');
+  P.showSection('section-classifier');
+  setAgentStatus('classifier-status', 'ti-list-check', 'Agent 2 — Incident Classification Agent', 'Classifying ' + scenario.incidents.length + ' incidents — assigning confidence and recommended action...', 'classifier');
+  status.textContent = 'Agent 2 — Incident Classifier running...';
+  scenario.incidents.forEach((inc, i) => P.renderIncidentCard(inc, i * 260));
+  await delay(scenario.incidents.length * 260 + 500);
+  setAgentStatus('classifier-status', 'ti-check', 'Agent 2 — Incident Classification Agent', 'Classification complete', 'classifier');
+  await delay(600);
+
+  // Agent 3 — Governance Guardrail (scripted safety review)
+  P.setFlowStep('governance');
+  P.showSection('section-governance');
+  const governance = buildDefaultGovernance(scenario, scenario.incidents);
+  setAgentStatus('governance-status', 'ti-shield-check', 'Agent 3 — Remediation Governance Agent', 'Validating blast radius, rollback posture, and change-control risk...', 'governance');
+  status.textContent = 'Agent 3 — Remediation Governance Agent running...';
+  governance.forEach((g, i) => P.renderGovernanceCard(g, i * 240));
+  await delay(governance.length * 240 + 500);
+  setAgentStatus('governance-status', 'ti-check', 'Agent 3 — Remediation Governance Agent', 'Governance review complete · approved actions are safe to simulate', 'governance');
+  await delay(600);
+  let governedIncidents = applyGovernance(scenario.incidents, governance);
+  governedIncidents = markDynamicRemediationRisk(governedIncidents);
+  renderApprovalGate(governedIncidents);
+
+  // Agent 4 — Ticketing & Shift Workflow (scripted)
+  // Runs immediately after governance so escalated/blocked items get formal ownership before the final outcome log.
+  const tickets = buildDefaultTickets(scenario, governedIncidents);
+  P.setFlowStep('tickets');
+  P.showSection('section-ticketing');
+  setAgentStatus('ticketing-status', 'ti-ticket', 'Agent 4 — Ticketing & Shift Workflow Agent', 'Creating simulated ServiceNow/Remedy tickets for next-shift attention...', 'ticketing');
+  status.textContent = 'Agent 4 — Ticketing & Shift Workflow running...';
+  tickets.forEach((t, i) => P.renderTicketCard(t, i * 240));
+  await delay(tickets.length * 240 + 500);
+  setAgentStatus('ticketing-status', 'ti-check', 'Agent 4 — Ticketing & Shift Workflow Agent', 'Ticket queue created for next shift · ' + tickets.length + ' ticket(s)', 'ticketing');
+  await delay(500);
+
+  // Operational Outcome Log (always simulated — no real network to act on)
+  P.setFlowStep('runbook');
+  P.showSection('section-resolution');
+  status.textContent = 'Rendering runbook execution, ticket routing, and blocked-action outcomes...';
+  P.animateMTTR(scenario.newMTTR, 2200);
+  for (const inc of governedIncidents) {
+    await P.renderExecRow(inc, 200);
+  }
+  const autoCount = governedIncidents.filter(i => i.action === 'auto').length;
+  const blockedCount = governedIncidents.filter(i => i.governanceDecision === 'block').length;
+  const escCount = governedIncidents.length - autoCount - blockedCount;
+  P.renderSummaryStrip(autoCount, governedIncidents.length, escCount, blockedCount, governedIncidents.filter(i => i.simulatedFailure).length);
+  P.resolveTopStats();
+  await delay(800);
+
+  // Agent 5 — Post-Incident Learner (scripted)
+  P.setFlowStep('learning');
+  P.showSection('section-learning');
+  setAgentStatus('learner-status', 'ti-brain', 'Agent 5 — Post-Incident Learner', 'Generating post-mortem, runbook update proposal, detection rule, and KB article draft...', 'learner');
+  status.textContent = 'Agent 5 — Post-Incident Learner running...';
+  const learning = buildDefaultLearning(scenario, governedIncidents, tickets, scenario.runbooks);
+  P.renderLearning(learning, scenario.runbooks);
+  await delay(900);
+  setAgentStatus('learner-status', 'ti-check', 'Agent 5 — Post-Incident Learner', 'Learning package generated · runbook update proposed', 'learner');
+  await delay(500);
+
+  // Handoff
+  P.setFlowStep('handoff');
+  P.showSection('section-handoff');
+  const openItems = governedIncidents.filter(i => i.action !== 'auto').map(i => i.id + ': ' + i.exec);
+  P.renderHandoff(
+    scenario.rootCause,
+    scenario.rawAlarmCount + ' raw alarms → correlated to 1 root cause, ' + governedIncidents.length + ' incidents',
+    autoCount + '/' + governedIncidents.length + ' auto-remediated · ' + escCount + ' escalated · ' + blockedCount + ' blocked by guardrail',
+    openItems,
+    'Simulated execution completed after governance validation, ticket handoff, and post-incident learning.',
+    tickets,
+    learning
+  );
+  status.textContent = 'Complete · next-shift brief and ticket queue ready';
+}
+
+// ─── LIVE MODE — real API calls via AGENT_REGISTRY ───────────────────────────
+async function runLiveMode(scenario, apiKey) {
+  const status = document.getElementById('status-line');
+  const P = window.Pipeline;
+  const prior = {};
+
+  try {
+    scenario.runbooks = retrieveRunbooks(scenario);
+    window.CurrentRunbooks = scenario.runbooks;
+    P.updateTopStats(scenario);
+    P.setFlowStep('ingestion');
+    P.showSection('section-ingestion');
+    P.renderIngestion(scenario);
+    status.textContent = 'Stage 0 — Normalizing event sources and impact context...';
+    await new Promise(r => setTimeout(r, 600));
+
+    // Agent 1 — Correlator (real API call)
+    P.setFlowStep('correlator');
+    P.showSection('section-correlator');
+    P.renderCorrelatorRaw(34);
+    setAgentStatus('correlator-status', 'ti-cpu', 'Agent 1 — Alarm Correlation Agent', 'Calling ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + ' — analyzing alarm pattern...', 'correlator');
+    status.textContent = 'Agent 1 — Alarm Correlator (live API call)...';
+    const correlatorOutput = await window.Agent01Correlator.run(apiKey, scenario);
+    prior.correlator = correlatorOutput;
+    P.renderCorrelatorResult(correlatorOutput.rootCause, correlatorOutput.groups, scenario.rawAlarmCount, correlatorOutput.actionableCount, scenario.suppressedEvents);
+    setAgentStatus('correlator-status', 'ti-check', 'Agent 1 — Alarm Correlation Agent', 'Root cause identified · ' + correlatorOutput.actionableCount + ' actionable incidents', 'correlator');
+
+    // Agent 2 — Classifier (real API call, receives prior[correlator])
+    P.setFlowStep('classifier');
+    P.showSection('section-classifier');
+    setAgentStatus('classifier-status', 'ti-list-check', 'Agent 2 — Incident Classification Agent', 'Calling ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + ' — classifying incidents...', 'classifier');
+    status.textContent = 'Agent 2 — Incident Classifier (live API call)...';
+    const incidents = await window.Agent02Classifier.run(apiKey, scenario, prior);
+    incidents.forEach((inc, i) => P.renderIncidentCard(inc, i * 260));
+    await new Promise(r => setTimeout(r, incidents.length * 260 + 400));
+    setAgentStatus('classifier-status', 'ti-check', 'Agent 2 — Incident Classification Agent', 'Classification complete', 'classifier');
+    prior.classifier = incidents;
+
+    // Agent 3 — Governance Guardrail (real API call, receives prior outputs)
+    P.setFlowStep('governance');
+    P.showSection('section-governance');
+    setAgentStatus('governance-status', 'ti-shield-check', 'Agent 3 — Remediation Governance Agent', 'Calling ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + ' — validating remediation guardrails...', 'governance');
+    status.textContent = 'Agent 3 — Remediation Governance Agent (live API call)...';
+    let governance = await window.Agent03Governance.run(apiKey, scenario, prior);
+    if (!Array.isArray(governance) || !governance.length) governance = buildDefaultGovernance(scenario, incidents);
+    governance.forEach((g, i) => P.renderGovernanceCard(g, i * 240));
+    await new Promise(r => setTimeout(r, governance.length * 240 + 500));
+    setAgentStatus('governance-status', 'ti-check', 'Agent 3 — Remediation Governance Agent', 'Governance review complete', 'governance');
+    let governedIncidents = applyGovernance(incidents, governance);
+    governedIncidents = markDynamicRemediationRisk(governedIncidents);
+    renderApprovalGate(governedIncidents);
+    prior.governance = governance;
+    prior.governedIncidents = governedIncidents;
+
+    // Agent 4 — Ticketing & Shift Workflow (real API call, receives prior outputs)
+    // Runs immediately after governance so escalated/blocked items get formal ownership before the final outcome log.
+    P.setFlowStep('tickets');
+    P.showSection('section-ticketing');
+    setAgentStatus('ticketing-status', 'ti-ticket', 'Agent 4 — Ticketing & Shift Workflow Agent', 'Calling ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + ' — creating trouble-ticket handoff records...', 'ticketing');
+    status.textContent = 'Agent 4 — Ticketing & Shift Workflow (live API call)...';
+    let tickets = [];
+    try { tickets = await window.Agent04Ticketing.run(apiKey, scenario, prior); } catch (_) { tickets = buildDefaultTickets(scenario, governedIncidents); }
+    if (!Array.isArray(tickets) || !tickets.length) tickets = buildDefaultTickets(scenario, governedIncidents);
+    tickets.forEach((t, i) => P.renderTicketCard(t, i * 240));
+    await new Promise(r => setTimeout(r, tickets.length * 240 + 500));
+    setAgentStatus('ticketing-status', 'ti-check', 'Agent 4 — Ticketing & Shift Workflow Agent', 'Ticket queue created for next shift · ' + tickets.length + ' ticket(s)', 'ticketing');
+    prior.tickets = tickets;
+
+    // Operational Outcome Log — deterministic, always simulated regardless of mode
+    P.setFlowStep('runbook');
+    P.showSection('section-resolution');
+    status.textContent = 'Rendering runbook execution, ticket routing, and blocked-action outcomes...';
+    const autoCount = governedIncidents.filter(i => i.action === 'auto').length;
+    const blockedCount = governedIncidents.filter(i => i.governanceDecision === 'block').length;
+    const escCount = governedIncidents.length - autoCount - blockedCount;
+    governedIncidents.forEach(inc => {
+      if (inc.action === 'auto' && !inc.time) inc.time = (Math.floor(Math.random() * 70) + 15) + ' sec';
+    });
+    const newMTTR = Math.max(4, Math.round(20 - autoCount)) + ' min';
+    P.animateMTTR(newMTTR, 2000);
+    for (const inc of governedIncidents) { await P.renderExecRow(inc, 200); }
+    P.renderSummaryStrip(autoCount, governedIncidents.length, escCount, blockedCount, governedIncidents.filter(i => i.simulatedFailure).length);
+    P.resolveTopStats();
+
+    // Agent 5 — Post-Incident Learner (real API call, receives prior outputs)
+    P.setFlowStep('learning');
+    P.showSection('section-learning');
+    setAgentStatus('learner-status', 'ti-brain', 'Agent 5 — Post-Incident Learner', 'Calling ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + ' — generating learning package...', 'learner');
+    status.textContent = 'Agent 5 — Post-Incident Learner (live API call)...';
+    let learning = null;
+    try { learning = await window.Agent05Learner.run(apiKey, scenario, prior); } catch (_) { learning = buildDefaultLearning(scenario, governedIncidents, tickets, scenario.runbooks); }
+    P.renderLearning(learning, scenario.runbooks);
+    setAgentStatus('learner-status', 'ti-check', 'Agent 5 — Post-Incident Learner', 'Learning package generated · runbook update proposed', 'learner');
+
+    // Handoff
+    P.setFlowStep('handoff');
+    P.showSection('section-handoff');
+    const openItems = governedIncidents.filter(i => i.action !== 'auto').map(i => i.id + ': ' + i.exec);
+    P.renderHandoff(
+      correlatorOutput.rootCause,
+      scenario.rawAlarmCount + ' raw alarms → correlated to 1 root cause, ' + governedIncidents.length + ' incidents',
+      autoCount + '/' + governedIncidents.length + ' auto-remediated · ' + escCount + ' escalated · ' + blockedCount + ' blocked by guardrail',
+      openItems,
+      'Live AI classification, ticket workflow, and post-incident learning generated via ' + (currentMode === 'claude' ? 'Claude' : 'OpenAI') + '.',
+      tickets,
+      learning
+    );
+    status.textContent = 'Complete · next-shift brief and ticket queue ready';
+
+  } catch (err) {
+    const failedAgent = prior.classifier ? 3 : prior.correlator ? 2 : 1;
+    P.showErrorBox('Agent ' + failedAgent + ' — ' + err.message);
+    status.textContent = 'Error in Agent ' + failedAgent;
+  }
+}
+
+// ─── MAIN ENTRY POINT ─────────────────────────────────────────────────────────
+async function runOrchestrator() {
+  if (isRunning) return;
+  const btn = document.getElementById('run-btn');
+  const scenarioKey = document.getElementById('scenario-select').value;
+  const scenario = window.SCENARIOS[scenarioKey];
+  scenario.key = scenarioKey;
+
+  if (currentMode !== 'demo') {
+    const apiKey = getApiKey();
+    if (!apiKey) { alert('Please enter your ' + (currentMode === 'claude' ? 'Anthropic' : 'OpenAI') + ' API key and click Connect.'); return; }
+  }
+
+  isRunning = true;
+  window.Pipeline.hideAllSections();
+  window.Pipeline.clearErrorBoxes();
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Running...';
+  clearInterval(rainInterval);
+
+  try {
+    if (currentMode === 'demo') {
+      await runDemoMode(scenario);
+    } else {
+      await runLiveMode(scenario, getApiKey());
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-bolt" style="font-size:16px"></i> Start NOC Workflow';
+    isRunning = false;
+  }
+}
+
+function resetAll() {
+  window.Pipeline.hideAllSections();
+  window.Pipeline.clearErrorBoxes();
+  document.getElementById('stat-alarms-box').className = 'stat-box crit';
+  document.getElementById('stat-mttr-box').className = 'stat-box crit';
+  document.getElementById('stat-alarms').className = 'stat-val red';
+  document.getElementById('stat-mttr').className = 'stat-val red';
+  document.getElementById('stat-alarms').textContent = '247';
+  document.getElementById('stat-mttr').textContent = '4.2 hrs';
+  document.getElementById('status-line').textContent = '';
+  startAlarmRain();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setMode('demo');
+  startAlarmRain();
+});
+
+</script>
+</body>
+</html>
